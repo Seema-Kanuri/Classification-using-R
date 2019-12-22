@@ -1,0 +1,999 @@
+---
+title: "Untitled"
+author: "Seema Rani Kanuri"
+date: "December 21, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Case Study
+
+Data Set Information:
+
+The data is related with direct marketing campaigns of a Portuguese banking institution. The marketing campaigns were based on phone calls. Often, more than one contact to the same client was required, in order to access if the product (bank term deposit) would be ('yes') or not ('no') subscribed.
+
+There are four datasets:
+1) bank-additional-full.csv with all examples (41188) and 20 inputs, ordered by date (from May 2008 to November 2010), very close to the data analyzed in [Moro et al., 2014]
+2) bank-additional.csv with 10% of the examples (4119), randomly selected from 1), and 20 inputs.
+3) bank-full.csv with all examples and 17 inputs, ordered by date (older version of this dataset with less inputs).
+4) bank.csv with 10% of the examples and 17 inputs, randomly selected from 3 (older version of this dataset with less inputs).
+
+
+The smallest datasets are provided to test more computationally demanding machine learning algorithms (e.g., SVM).
+The classification goal is to predict if the client will subscribe (yes/no) a term deposit (variable y).
+
+
+Methodology 
+Step 1: Business Problem
+Step 2: Analytics Objective
+Step 3: Data Preparation
+
+
+
+```{r bank_additional_full, echo= FALSE, warning=FALSE}
+library(readr)
+bank_additional_full <- read_delim("F:\\Loans\\bank-additional\\bank-additional\\bank-additional-full.csv",
+                                   ";", escape_double = FALSE, trim_ws = TRUE)
+head(bank_additional_full)
+```
+
+## Descriptive Data Analaysis
+
+```{r}
+sapply(bank_additional_full,typeof)
+```
+
+
+
+
+
+```{r}
+library(Hmisc)
+describe(bank_additional_full)
+```
+
+#Issues
+
+
+There are many 'unknown' value in the job , education,housing,loan and default feature
+Preprocessing required to fill unknown values
+
+The data is imbalanced 
+
+#Explorartory Data Analaysis
+
+Adding a unique identifier foe each customerid for future 
+```{r pressure, echo=FALSE}
+
+bank_additional_full$ID <- seq.int(nrow(bank_additional_full))
+```
+
+#Replacing the unknow / 999 to NA
+```{r}
+bank_additional_full$pdays[bank_additional_full$pdays == 999] <- NA
+bank_additional_full[,c(2:7)][bank_additional_full[,c(2:7)] == "unknown"] <- NA
+```
+
+
+# Check number of na in dataset
+```{r}
+colSums(is.na.data.frame(bank_additional_full))
+
+```
+
+
+
+
+#  exploratory analysis of the categorical variables :Job
+
+```{r}
+ggplot(bank_additional_full, aes(x=job, fill=y))  + geom_bar(alpha=0.9) + scale_fill_manual( values = c("light green","dark green")) +  geom_text(aes(label=paste(..count..,scales::percent(..count../sum(..count..)),sep = "   |  ")),stat='count',position=position_dodge(0.9),vjust=-0.2,size = 3)
+
+```
+
+
+```{r}
+# Build plot
+ggplot(bank_additional_full, aes(job, fill = y)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual( values = c("light green","dark green")) + 
+  scale_y_continuous(labels = scales::percent) 
+
+```
+
+```{r}
+crosstable <- table(bank_additional_full$job, bank_additional_full$y)
+chisq.test(crosstable)
+```
+
+
+# Education
+
+```{r}
+ggplot(bank_additional_full, aes(x=education, fill=y))  + geom_bar(alpha=0.9) + scale_fill_manual( values = c("light green","dark green")) +  geom_text(aes(label=paste(..count..,scales::percent(..count../sum(..count..)),sep = "   |  ")),stat='count',position=position_dodge(0.9),vjust=-0.2,size = 3)
+```
+
+
+```{r}
+# Build plot
+ggplot(bank_additional_full, aes(education, fill = y)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual( values = c("light green","dark green")) + 
+  scale_y_continuous(labels = scales::percent) 
+
+```
+
+
+
+
+```{r}
+crosstable <- table(bank_additional_full$education, bank_additional_full$y)
+chisq.test(crosstable)
+```
+
+
+# Housing
+```{r}
+ggplot(bank_additional_full, aes(x=housing, fill=y))  + geom_bar(alpha=0.9) + scale_fill_manual( values = c("light green","dark green")) +  geom_text(aes(label=paste(..count..,scales::percent(..count../sum(..count..)),sep = "   |  ")),stat='count',position=position_dodge(0.9),vjust=-0.2,size = 3)
+```
+
+
+```{r}
+# Build plot
+ggplot(bank_additional_full, aes(housing, fill = y)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual( values = c("light green","dark green")) + 
+  scale_y_continuous(labels = scales::percent) 
+
+```
+
+
+
+
+```{r}
+crosstable <- table(bank_additional_full$housing, bank_additional_full$y)
+chisq.test(crosstable)
+```
+
+
+
+
+# Loan
+```{r}
+ggplot(bank_additional_full, aes(x=loan, fill=y))  + geom_bar(alpha=0.9) + scale_fill_manual( values = c("light green","dark green")) +  geom_text(aes(label=paste(..count..,scales::percent(..count../sum(..count..)),sep = "   |  ")),stat='count',position=position_dodge(0.9),vjust=-0.2,size = 3)
+```
+
+
+```{r}
+# Build plot
+ggplot(bank_additional_full, aes(loan, fill = y)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual( values = c("light green","dark green")) + 
+  scale_y_continuous(labels = scales::percent) 
+
+```
+
+
+
+
+```{r}
+crosstable <- table(bank_additional_full$loan, bank_additional_full$y)
+chisq.test(crosstable)
+```
+
+
+
+
+
+
+
+# default
+```{r}
+ggplot(bank_additional_full, aes(x=default, fill=y))  + geom_bar(alpha=0.9) + scale_fill_manual( values = c("light green","dark green")) +  geom_text(aes(label=paste(..count..,scales::percent(..count../sum(..count..)),sep = "   |  ")),stat='count',position=position_dodge(0.9),vjust=-0.2,size = 3)
+```
+
+
+```{r}
+# Build plot
+ggplot(bank_additional_full, aes(default, fill = y)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual( values = c("light green","dark green")) + 
+  scale_y_continuous(labels = scales::percent) 
+
+```
+
+
+
+
+```{r}
+crosstable <- table(bank_additional_full$default, bank_additional_full$y)
+chisq.test(crosstable)
+```
+
+#'education', 'job', 'housing', and 'loan' has significant conversion rate for few classes.
+# default has many unknown values so treating it as a dummy variable
+
+
+# Adhoc : used cross-tabulation to understand if there any dependency of one variable over other
+for example educattion , job are related
+so using this insights one way is to impute the missing value in job and education but the combination of age
+, housing , loan also drive these varaibles to certain way 
+
+In real world scenario its suggested to use the categorical varaibles as it as and deal with the cardinality using techniques like supervised ratio, weighted method or so.
+
+
+## later step : I have saved the coorelation matrix on the orginal data and will use later to compare how the 
+imputed numbers has changed the correlation , if so than I shouldnt impute the features 
+
+
+However here I'm using decision tree method (which might add error to our model) to impute the ategorical variable 
+
+
+
+
+
+#Tried different hyperparameter before , the below tuning gave better results
+
+#Impute Job using desicion Tree
+```{r, warning=FALSE,echo=FALSE}
+library(dplyr)
+library(rpart)
+library(rpart.plot)
+set.seed(1234567)
+
+df <- bank_additional_full
+data_test <- df %>% select (age,job,marital,education,default,housing,loan,ID) %>% filter((is.na(job)))
+create_train_test <- df %>% select (age,job,marital,education,default,housing,loan,ID) %>% filter(!(is.na(job)))
+
+control <- rpart.control(minsplit = 4,
+                         minbucket = round(5 / 3),
+                         maxdepth = 5,
+                         cp = 0)
+job_tree <- rpart(job~.-ID, data = (create_train_test),
+                   method = 'class', control = control)
+rpart.plot(job_tree, varlen=12, type=1, extra=106, leaf.round=10, cex=.7)
+
+
+
+predict_unseen <-predict(job_tree,data_test , type = 'class')
+pred_job <- cbind(data_test,predict_unseen)
+
+
+names(pred_job)
+pred_job$predict_unseen <- as.character(pred_job$predict_unseen)
+bank_additional_full_1 <- merge(bank_additional_full, pred_job[,c(8,9)], by = 'ID',all.x = TRUE)
+bank_additional_full_1$job <- ifelse(is.na(bank_additional_full_1$job) == T, bank_additional_full_1$predict_unseen, bank_additional_full_1$job)
+
+#rpart.plot(job_tree, varlen=12, type=1, extra=106, leaf.round=10, cex=.7)
+```
+
+# Imputing education using decision tree
+```{r}
+
+
+# tree 2
+data_test <- df %>% select (age,job,marital,education,default,housing,loan,ID) %>% filter((is.na(education)))
+create_train_test <- df %>% select (age,job,marital,education,default,housing,loan,ID) %>% filter(!(is.na(education)))
+
+
+control <- rpart.control(minsplit = 4,
+                         minbucket = round(5 / 3),
+                         maxdepth = 4,
+                         cp = 0)
+tune_fit <- rpart(education~.-ID, data = (create_train_test),
+                  method = 'class', control = control)
+rpart.plot(tune_fit, varlen=12, type=1, extra=106, leaf.round=10, cex=.7)
+
+predict_unseen <-predict(tune_fit, data_test, type = 'class')
+pred_education <- cbind(data_test,predict_unseen)
+
+
+names(pred_education)
+pred_education$predict_unseen <- as.character(pred_education$predict_unseen)
+bank_additional_full_2 <- merge(bank_additional_full_1[,-23], pred_education[,c(8,9)], by = 'ID',all.x = TRUE)
+bank_additional_full_2$education <- ifelse(is.na(bank_additional_full_2$education) == T, 
+                                     bank_additional_full_2$predict_unseen, bank_additional_full_2$education)
+
+
+
+
+```
+
+# Imputing housing using decision tree
+
+```{r}
+
+
+data_test <- df %>% select (age,job,marital,education,default,housing,loan,ID) %>% filter((is.na(housing)))
+create_train_test <- df %>% select (age,job,marital,education,default,housing,loan,ID) %>% filter(!(is.na(housing)))
+
+control <- rpart.control(minsplit = 4,
+                         minbucket = round(5 / 3),
+                         maxdepth = 4,
+                         cp = 0)
+tune_fit <- rpart(housing~.-ID, data = (create_train_test),
+                  method = 'class', control = control)
+rpart.plot(tune_fit, varlen=12, type=1, extra=106, leaf.round=10, cex=.7)
+
+predict_unseen <-predict(tune_fit, data_test, type = 'class')
+pred_housing <- cbind(data_test,predict_unseen)
+
+
+names(pred_housing)
+pred_housing$predict_unseen <- as.character(pred_housing$predict_unseen)
+bank_additional_full_3 <- merge(bank_additional_full_2[,-23], pred_housing[,c(8,9)], by = 'ID',all.x = TRUE)
+bank_additional_full_3$housing <- ifelse(is.na(bank_additional_full_3$housing) == T, 
+                                         bank_additional_full_3$predict_unseen, bank_additional_full_3$housing)
+
+```
+
+
+# Imputing loan  using decision tree
+```{r}
+
+data_test <- df %>% select (age,job,marital,education,default,housing,loan,ID) %>% filter((is.na(loan)))
+create_train_test <- df %>% select (age,job,marital,education,default,housing,loan,ID) %>% filter(!(is.na(loan)))
+
+control <- rpart.control(minsplit = 4,
+                         minbucket = round(5 / 3),
+                         maxdepth = 4,
+                         cp = 0)
+tune_fit <- rpart(loan~.-ID, data = na.omit(create_train_test),
+                  method = 'class', control = control)
+rpart.plot(tune_fit, varlen=12, type=1, extra=106, leaf.round=10, cex=.7)
+
+predict_unseen <-predict(tune_fit, data_test, type = 'class')
+pred_loan <- cbind(data_test,predict_unseen)
+
+
+names(pred_loan)
+pred_loan$predict_unseen <- as.character(pred_loan$predict_unseen)
+bank_additional_full_4 <- merge(bank_additional_full_3[,-23], pred_housing[,c(8,9)], by = 'ID',all.x = TRUE)
+bank_additional_full_4$loan <- ifelse(is.na(bank_additional_full_4$loan) == T, 
+                                         bank_additional_full_4$predict_unseen, bank_additional_full_4$loan)
+
+
+```
+
+
+
+# Imputed the values only after checking the correlation before and after imputaion 
+# the number of tree were decided after doing validation on subset of data
+
+
+
+NA value ?
+
+```{r}
+colSums(is.na.data.frame(bank_additional_full_4))
+```
+
+# Got NA only in pdays , default , nbremployed and the count is huge  so lets treat it as its
+dont want to loose the information
+
+
+```{r}
+summary(bank_additional_full_4$pdays)
+```
+
+# median / mean is 6 days so let make it pdays "with in 1 week" and "2 week" and "3 week and more"
+
+looking how is the conversion rate of the previous marketing campiagn rate varies ?
+```{r}
+library(sqldf)
+conversion <- merge(sqldf("select pdays, count(*) as total from bank_additional_full_4 group by pdays"),
+                    sqldf("select pdays, count(*) as Yes from bank_additional_full_4 where y = 'yes' group by pdays")
+                    , by ="pdays" , all.x = TRUE)
+conversion[,c(2,3)][is.na(conversion[,2:3])] <- 0
+conversion$ConversionRate <- (conversion$Yes/conversion$total)*100
+  
+library(ggplot2)
+library(tidyr)
+
+na.omit(conversion) %>%
+  gather(key,value, total, ConversionRate) %>%
+  ggplot(aes(x=pdays, y=value, colour=key))+
+  #geom_line(aes(color=value))
+  geom_line() + scale_color_manual(values=c("dark green", "blue"))
+```
+the conversion rate is same as higg as 65% for differnt days
+
+# pdays
+
+```{r}
+# Build plot
+ggplot(bank_additional_full, aes(pdays, fill = y)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual( values = c("light green","dark green")) + 
+  scale_y_continuous(labels = scales::percent) 
+
+```
+
+
+
+Grouping the pdays into buckets as can be seen the volume varies over
+
+
+
+```{r}
+bank_additional_full_4$pdaysBucket <- ifelse(is.na(bank_additional_full_4$pdays) == T, NA,
+                                             ifelse(bank_additional_full_4$pdays < 8, "1 week",
+                                                    ifelse(bank_additional_full_4$pdays > 7 & bank_additional_full_4$pdays < 15, "2 weeks","3 weeks or more")))
+
+table(bank_additional_full_4$pdaysBucket)
+```
+
+
+```{r}
+crosstable <- table(bank_additional_full_4$pdaysBucket, bank_additional_full$y)
+chisq.test(crosstable)
+```
+
+
+
+# pdays
+
+```{r}
+# Build plot
+ggplot(bank_additional_full_4, aes(pdaysBucket, fill = y)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual( values = c("light green","dark green")) + 
+  scale_y_continuous(labels = scales::percent) 
+
+```
+
+# month 
+
+```{r}
+# Build plot
+ggplot(bank_additional_full, aes(month, fill = y)) +
+  geom_bar(position = "fill") +
+  scale_fill_manual( values = c("light green","dark green")) + 
+  scale_y_continuous(labels = scales::percent) 
+
+```
+
+```{r}
+crosstable <- table(bank_additional_full_4$month, bank_additional_full_4$y)
+chisq.test(crosstable)
+#There was a significant relationship 
+prop.table(crosstable,1)
+```
+
+
+```{r}
+crosstable <- table(bank_additional_full_4$day_of_week, bank_additional_full_4$y)
+chisq.test(crosstable)
+#There was a significant relationship  
+prop.table(crosstable,1)
+```
+
+
+```{r}
+summary(bank_additional_full_4$duration)
+```
+
+
+
+```{r}
+colSums(is.na.data.frame(bank_additional_full_4))
+```
+
+#FEATURE ENGINEERING
+
+
+#lets create correlation matrix and do one-hot encoding
+One-hot encoding
+Next step, we will transform the categorical data to dummy variables. This is the one-hot encoding step.
+
+The purpose is to transform each value of each categorical feature in a binary feature {0, 1}. The dummy conversion results in 42 variables.
+
+```{r, echo=FALSE}
+library(fastDummies)
+df <- fastDummies::dummy_cols(bank_additional_full_4[,-23])
+
+View(as.data.frame(names(df)))
+
+variable_for_correlation <- c(74,2,12:13,15,17:21,24:29,31:37,39:42,44:46,48:72,76:78)
+corr_dataset <- subset(df, select = variable_for_correlation)
+View(as.data.frame(sapply(corr_dataset,typeof)))
+correlation_matrix <- cor(corr_dataset, method = "pearson", use = "pairwise.complete.obs")
+write.csv(correlation_matrix,"F:\\Loans\\bank-additional\\bank-additional\\correlation_matrix_3.csv")
+```
+
+
+```{r}
+library(ggcorrplot)
+ggcorrplot(correlation_matrix)
+```
+
+
+
+
+```{r}
+library(inspectdf)
+variable_for_correlation <- c(74,2,12:13,15,17:21,24:29,31:37,39:42,44:46,48:72,76:78)
+df<- fastDummies::dummy_cols(bank_additional_full_4[,-23])
+final <- subset(df, select = variable_for_correlation)
+glimpse(final)
+```
+
+#Feature Selection
+
+
+
+
+```{r}
+names(final)
+```
+
+
+
+```{r}
+final[is.na(final)] <- 0
+colSums(is.na.data.frame(final))
+
+```
+
+
+#Checking the predictor variables that are highly correlated with each other
+#Two metrics are used - Correlation factor and VIF
+
+
+
+```{r}
+
+correlation_matrix <- cor(final, method = "pearson", use = "pairwise.complete.obs")
+library(caret)
+highlyCorrelated <- findCorrelation(correlation_matrix, cutoff=0.5)
+# print indexes of highly correlated attributes
+print(names(final[,highlyCorrelated]))
+```
+
+
+```{r}
+cor(final[,c(highlyCorrelated,1)], method = "pearson", use = "pairwise.complete.obs")
+write.csv(cor(final[,c(highlyCorrelated,1)], method = "pearson", use = "pairwise.complete.obs"),"F:\\Loans\\bank-additional\\bank-additional\\correlation_matrix_4.csv")
+```
+
+
+#dropping the below var
+poutcome_nonexistent
+emp.var.rate
+
+
+
+```{r}
+final <- subset(final, select = -c(`emp.var.rate`,`poutcome_nonexistent`))
+```
+
+
+```{r}
+
+library(car)
+model <- glm(formula = y_yes ~ ., family = binomial(link = "logit"), data = final)
+model
+```
+
+#dropiing housing_yes,day_of_week_fri ,month_sep ,contact_cellular ,loan_yes
+
+
+
+```{r}
+final <- subset(final, select = -c(`housing_yes`,`day_of_week_fri`,`month_sep`,`contact_cellular`,`loan_yes`))
+```
+
+
+
+#Perform stepwise variable selection
+```{r}
+full.model <- glm(y_yes ~., data = final, family = binomial)
+coef(full.model)
+
+
+```
+
+
+```{r}
+
+library(MASS)
+step.model <- full.model %>% stepAIC(trace = FALSE)
+coef(step.model)
+```
+
+#stepwise selection reduced the complexity of the model without compromising its accuracy
+
+```{r}
+final_var <- names(unlist(step.model[[1]]))
+```
+
+
+# using caret to get another guit check for feature selection
+
+```{r}
+set.seed(1233457)
+
+library(mlbench)
+library(caret)
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+model_fs <- train(y_yes~., data=final, method="glm", preProcess="scale", trControl=control)
+# estimate variable importance
+importance <- varImp(model_fs, scale=FALSE)
+
+print(importance)
+
+plot(importance)
+
+```
+
+
+
+
+```{r}
+final_var_fs <- c("duration","euribor3m","cons.price.idx","month_mar","cons.conf.idx","pdaysBucket_1 week","contact_telephone","month_may","pdaysBucket_2 weeks","poutcome_failure","month_oct",
+"pdaysBucket_3 weeks or more","job_retired","job_student","poutcome_success","default_no","day_of_week_mon",
+"","month_dec","month_jul","month_apr","month_aug","month_jun","month_nov","day_of_week_wed","previous",
+"education_university.degree")
+```
+
+```{r}
+intersect(final_var,final_var_fs)
+```
+
+
+
+```{r}
+final_step <- final[,(names(final) %in% c(final_var,final_var_fs,"y_yes"))]
+```
+
+```{r}
+table(final_step$y_yes)
+
+dim(final_step)
+```
+
+
+
+#Note : Noticed Duration is highly correklated to the output 
+# its imporatnt tio find the right customer before the call 
+
+# created 2 model 1 with duration and 1 without duration
+
+
+#So this model consider duration into account
+
+
+```{r}
+final_step1 <- subset(final_step, select = -c(`nr.employed`))
+```
+
+
+
+
+Model1 - use all variables
+Split the data into training and test datasets.
+
+
+```{r}
+set.seed(123456)
+final_step1$y_yes <- as.factor(final_step1$y_yes)
+i <- createDataPartition(final_step1$y, p = 3/4,list = FALSE)
+data_train <- final_step1[i,]
+data_val <- final_step1[-i,]
+
+
+dim(data_train)
+dim(data_val)
+
+table(data_train$y_yes)
+table(data_val$y_yes)
+
+
+```
+```{r}
+
+prop.table(table(data_train$y_yes)) 
+prop.table(table(data_val$y_yes)) 
+```
+
+
+
+## Loading DMwr to balance the unbalanced class
+#Dealing with Imbalanced Data
+## Smote : Synthetic Minority Oversampling Technique To Handle Class Imbalancy In Binary Classification
+
+
+
+```{r}
+
+library(DMwR)
+data_train_smote <- SMOTE(y_yes~.,data_train,perc.over = 500, k = 5, perc.under = 200)
+as.data.frame(table(data_train_smote$y_yes))
+```
+
+```{r}
+prop.table(table(data_train$y)) 
+prop.table(table(data_train_smote$y)) 
+
+```
+
+
+#Modelling using the below algiorithm
+set.seed(123)
+
+
+
+
+
+#GLM
+
+```{r}
+set.seed(123) 
+# logistic regression
+
+set.seed(123)
+# splitting
+control <- trainControl(method = "cv",
+                        number = 10,
+                        classProbs = TRUE,
+                        summaryFunction = multiClassSummary)
+
+
+data_train_smote$y_yes <- make.names(data_train_smote$y_yes)
+model_glm <- train(y_yes~.,
+                   data = data_train_smote,
+                   method = "glm",
+                   family = "binomial",
+                   trControl = control)
+print(model_glm)
+
+#Summary Statistics
+summary(model_glm)
+
+
+
+#######-----------
+
+mom <- data_val
+pred_glm_raw <- predict.train(model_glm,
+                          newdata = mom,
+                          type = "prob") 
+
+prob=predict(model_glm,type=c("prob"))
+mom$prob=pred_glm_raw$X1
+library(pROC)
+g <- roc(y_yes ~ prob, data = mom)
+plot(g)    
+
+auc(g)
+
+
+```
+
+# random forest
+
+```{r}
+set.seed(123)
+control <- trainControl(method = "cv",
+                        number = 10,
+                        classProbs = TRUE,
+                        summaryFunction = multiClassSummary) 
+
+
+
+model_rf <- train(y_yes~.,
+                  data = data_train_smote,
+                  method = "rf",
+                  ntree = 20,
+                  tuneLength = 5,
+                  trControl = control,
+                  tuneGrid = rfGrid)
+print(model_rf)
+```
+
+
+
+# GBM
+```{r}
+set.seed(12345)
+model_gbm = train(y_yes ~ .,
+                  data = data_train_smote,
+                  tuneLength = 5,
+                  method = "gbm",
+                  trControl = myControl,
+                  na.action=na.exclude)
+```
+
+
+# grid gbm
+
+```{r}
+gbmTuningGrid = expand.grid(interaction.depth = 4,
+                            n.trees = c(50, 100, 150, 200),
+                            #interaction.depth=5,
+                            shrinkage = c(0.1,.1,.5,1),
+                            n.minobsinnode = c(5,10,15))
+model_stockgbm_cv = train(y_yes ~ .,
+                          data = data_train,
+                          tuneLength = 18,
+                          method = "gbm",
+                          trControl = myControl,
+                          tuneGrid = gbmTuningGrid,
+                          na.action=na.exclude)
+
+model_stockgbm_cv
+```
+
+
+# model performance / selection
+
+```{r}
+model_glm
+
+
+model_rf
+
+
+model_gbm
+
+
+```
+
+
+
+```{r}
+#######-----------
+mom <- data_val
+
+
+# Logistic regression
+pred_glm_raw <- predict.train(model_glm,
+                          newdata = data_val,
+                          type = "prob") 
+# Random forest
+pred_rf_raw <- predict.train(model_rf,
+                          newdata = data_val,
+                          type = "prob")
+
+# GBBoost
+pred_gbm_raw <- predict.train(model_gbm,
+                          newdata = data_val,
+                          type = "prob")
+
+
+mom$prob1=pred_glm_raw$X1
+library(pROC)
+g <- roc(y_yes ~ prob1, data = mom)
+print(plot(g) )   
+
+auc(g)
+
+
+mom$prob2=pred_rf_raw$X1
+library(pROC)
+g1 <- roc(y_yes ~ prob2, data = mom)
+print(plot(g1)) 
+
+auc(g1)
+
+
+
+mom$prob3=pred_gbm_raw$X1
+library(pROC)
+g3 <- roc(y_yes ~ prob3, data = mom)
+print(plot(g3))    
+
+auc(g3)
+
+
+
+```
+
+```{r}
+
+#data_val$y_yes <- make.names(data_val$y_yes)
+# Logistic regression
+pred_glm_raw <- predict.train(model_glm,
+                          newdata = data_val,
+                          type = "raw") 
+
+# Random forest
+pred_rf_raw <- predict.train(model_rf,
+                          newdata = data_val,
+                          type = "raw")
+
+# GBBoost
+pred_gbm_raw <- predict.train(model_gbm,
+                          newdata = data_val,
+                          type = "raw")
+
+
+```
+
+
+```{r}
+confusionMatrix(data = as.factor(substr(pred_glm_raw,2,2)),
+                factor(data_val$y_yes),
+                positive = "1")
+
+confusionMatrix(data = as.factor(substr(pred_rf_raw,2,2)),
+                factor(data_val$y_yes),
+                positive = "1")
+
+
+confusionMatrix(data = as.factor(substr(pred_gbm_raw,2,2)),
+                factor(data_val$y_yes),
+                positive = "1")
+```
+
+
+
+
+#MODEL SELECTION 
+
+#Even though GBoost and Random Forest had same performance metrics. We are choosing RF.
+#RF has high F1 and then Test Accuracy than GBoost
+
+```{r}
+varImp(model_rf)
+```
+
+
+```{r}
+#Prediction on the test data
+final_pred_prob <- predict(model_rf, data_val, type ="prob")
+final_pred_prob <- final_pred_prob[,2]
+
+
+```
+
+```{r}
+
+
+#confusion matrix
+table(data_val$y_yes, final_pred_prob > 0.5)
+
+library(ROCR)
+ROCRpred <- prediction(final_pred_prob, data_val$y_yes)
+ROCRperf <- performance(ROCRpred, 'tpr','fpr')
+print(plot(ROCRperf, colorize = TRUE, text.adj = c(-0.2,1.7)))
+#plot glm)
+
+```
+
+
+
+
+
+```{r}
+#Setting the optimum cutoff value
+final_prediction <- ifelse(final_pred_prob > 0.2,1,0)
+
+data_val$prediction <- final_prediction
+
+prop.table(table(data_val$prediction))
+
+
+write.csv(data_val, file="F:\\Loans\\bank-additional\\bank-additional\\results.csv", row.names=FALSE)
+
+```
+
+
+```{r}
+confusionMatrix(data = as.factor(data_val$prediction),
+                 factor(data_val$y_yes),
+                 positive = "1")
+
+```
+
+
+
+
+#References
+#https://cran.r-project.org/web/packages/fastDummies/vignettes/making-dummy-variables.html
+#https://machinelearningmastery.com/feature-selection-with-the-caret-r-package/
+#http://rikunert.com/SMOTE_explained
+#https://rpubs.com/abhaypadda/smote-for-imbalanced-data
